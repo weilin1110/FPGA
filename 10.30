@@ -104,16 +104,6 @@ assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2b'10 ? 1 : 0;
 //================================================================
 reg [2:0] current_state, next_state;
 
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        btn_m_d1 <= 0;
-        btn_r_d1 <= 0;
-    end else begin
-        btn_m_d1 <= btn_m;
-        btn_r_d1 <= btn_r;
-    end
-end
-
 // 狀態寄存器（主狀態）
 always @(posedge d_clk or negedge rst_n) begin
     if (!rst_n)
