@@ -1,0 +1,195 @@
+// 十點半遊戲主模組 tenthirty.v
+// 功能：控制整個遊戲流程（發牌、比牌、顯示、LED），與 LUT 模組搭配運作
+
+module tenthirty(
+    input clk,
+    input rst_n, // 非同步負緣 reset
+    input btn_m, // 中鍵，代表 "抽牌" 或 "開始"
+    input btn_r, // 右鍵，代表 "不抽牌" 或 "進下一階段"
+    output reg [7:0] seg7_sel,
+    output reg [7:0] seg7,   // segment 顯示器右邊資料（前四顆）
+    output reg [7:0] seg7_l, // segment 顯示器左邊資料（後四顆）
+    output reg [2:0] led     // led[0] : 玩家贏, led[1] : 莊家贏, led[2] : 遊戲結束
+);
+
+//================================================================
+//   PARAMETER - 狀態定義
+//================================================================
+parameter IDLE = 0;
+parameter BEGIN = 1; // 起始牌階段（玩家與莊家各一張）
+parameter HIT_PLAYER = 2; // 玩家抽牌階段
+parameter HIT_DEALER = 3; // 莊家抽牌階段
+parameter COMPARE = 4; // 比牌階段
+parameter DONE = 5;    // 遊戲結束（4 回合）
+
+//================================================================
+//   d_clk 分頻器設定
+//================================================================
+reg [24:0] counter; 
+wire dis_clk = counter[1]; // 顯示用時脈（較快）
+wire d_clk   = counter[4]; // 控制邏輯用時脈（較慢）
+
+// 分頻器邏輯
+always@(posedge clk or negedge rst_n) begin
+    if(!rst_n) begin
+        counter <= 0;
+    end else begin
+        counter <= counter + 1;
+    end
+end
+
+//================================================================
+//   REG / WIRE 區域
+//================================================================
+reg [7:0] seg7_temp[0:7]; // 暫存各顆七段顯示器顯示的值
+reg [2:0] dis_cnt;        // 控制哪一顆七段顯示器亮
+reg pip;                  // 發牌觸發信號
+wire [3:0] number;        // 從 LUT 抽出的一張牌值（1~13）
+
+//================================================================
+//   FSM 狀態控制
+//================================================================
+reg [2:0] state, next_state;
+
+// 按鈕去彈跳 + one-shot pulse
+reg btn_m_d1, btn_r_d1;
+wire btn_m_pos = btn_m & ~btn_m_d1;
+wire btn_r_pos = btn_r & ~btn_r_d1;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        btn_m_d1 <= 0;
+        btn_r_d1 <= 0;
+    end else begin
+        btn_m_d1 <= btn_m;
+        btn_r_d1 <= btn_r;
+    end
+end
+
+// 狀態寄存器（主狀態）
+always @(posedge d_clk or negedge rst_n) begin
+    if (!rst_n)
+        state <= IDLE;
+    else
+        state <= next_state;
+end
+
+// 狀態轉移邏輯
+always @(*) begin
+    case (state)
+        IDLE: begin
+            if (btn_m_pos)
+                next_state = BEGIN;
+            else
+                next_state = IDLE;
+        end
+        BEGIN: begin
+            next_state = HIT_PLAYER;
+        end
+        HIT_PLAYER: begin
+            if (btn_r_pos)
+                next_state = HIT_DEALER;
+            else
+                next_state = HIT_PLAYER;
+        end
+        HIT_DEALER: begin
+            if (btn_r_pos)
+                next_state = COMPARE;
+            else
+                next_state = HIT_DEALER;
+        end
+        COMPARE: begin
+            if (btn_r_pos)
+                next_state = DONE;
+            else
+                next_state = COMPARE;
+        end
+        DONE: begin
+            if (btn_m_pos)
+                next_state = BEGIN;
+            else
+                next_state = DONE;
+        end
+        default: next_state = IDLE;
+    endcase
+end
+
+//================================================================
+//   LED 控制邏輯
+//================================================================
+// 假設外部已定義 player_total_int / half、dealer_total_int / half
+always @(posedge d_clk or negedge rst_n) begin
+    if (!rst_n) begin
+        led <= 3'b000;
+    end else begin
+        case (state)
+            COMPARE: begin
+                if ((player_total_int > 10) || (player_total_int == 10 && player_total_half == 1))
+                    led <= 3'b010; // 玩家爆牌 → 莊家贏
+                else if ((dealer_total_int > 10) || (dealer_total_int == 10 && dealer_total_half == 1))
+                    led <= 3'b001; // 莊家爆牌 → 玩家贏
+                else if ((player_total_int > dealer_total_int) ||
+                         (player_total_int == dealer_total_int && player_total_half > dealer_total_half))
+                    led <= 3'b001; // 玩家大
+                else
+                    led <= 3'b010; // 其他情況莊家贏
+            end
+            DONE: begin
+                led <= 3'b100; // 四回合結束顯示
+            end
+            default: begin
+                led <= 3'b000;
+            end
+        endcase
+    end
+end
+
+//================================================================
+//   SEGMENT 顯示邏輯（不要修改以下區段）
+//================================================================
+
+always@(posedge dis_clk or negedge rst_n) begin
+    if(!rst_n)
+        dis_cnt <= 0;
+    else
+        dis_cnt <= (dis_cnt >= 7) ? 0 : (dis_cnt + 1);
+end
+
+always @(posedge dis_clk or negedge rst_n) begin 
+    if(!rst_n)
+        seg7 <= 8'b0000_0001;
+    else if(!dis_cnt[2])
+        seg7 <= seg7_temp[dis_cnt];
+end
+
+always @(posedge dis_clk or negedge rst_n) begin 
+    if(!rst_n)
+        seg7_l <= 8'b0000_0001;
+    else if(dis_cnt[2])
+        seg7_l <= seg7_temp[dis_cnt];
+end
+
+always@(posedge dis_clk or negedge rst_n) begin
+    if(!rst_n)
+        seg7_sel <= 8'b11111111;
+    else begin
+        case(dis_cnt)
+            0 : seg7_sel <= 8'b00000001;
+            1 : seg7_sel <= 8'b00000010;
+            2 : seg7_sel <= 8'b00000100;
+            3 : seg7_sel <= 8'b00001000;
+            4 : seg7_sel <= 8'b00010000;
+            5 : seg7_sel <= 8'b00100000;
+            6 : seg7_sel <= 8'b01000000;
+            7 : seg7_sel <= 8'b10000000;
+            default : seg7_sel <= 8'b11111111;
+        endcase
+    end
+end
+
+//================================================================
+//   LUT 發牌模組實例化
+//================================================================
+LUT inst_LUT (.clk(d_clk), .rst_n(rst_n), .pip(pip), .number(number));
+
+endmodule
