@@ -102,7 +102,7 @@ assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2b'10 ? 1 : 0;
 //================================================================
 //   FSM 狀態控制
 //================================================================
-reg [2:0] state, next_state;
+reg [2:0] current_state, next_state;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -117,9 +117,9 @@ end
 // 狀態寄存器（主狀態）
 always @(posedge d_clk or negedge rst_n) begin
     if (!rst_n)
-        state <= IDLE;
+        current_state <= IDLE;
     else
-        state <= next_state;
+        current_state <= next_state;
 end
 
 // 狀態轉移邏輯
