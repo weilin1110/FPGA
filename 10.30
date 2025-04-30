@@ -204,7 +204,42 @@ always @(*) begin
 end
 
 //加起來
+//點數加總
+always @(posedge d_clk or negedge rst_n) begin
 
+    if(card_state = COMPARE) begin
+        for(i=0;i<5;i++) begin
+                if ( cards_of_player[i]<= 10) begin
+                    total_point_of_player[1] <= total_point_of_player[1] + cards_of_player[i];
+
+                end else if (cards_of_player[i] >= 11 && cards_of_player[i] <= 13) begin
+                    total_point_of_player[0] <= total_point_of_player[0] + 1;
+
+            //兩個半點相加變1點
+                    if (total_point_of_player[1] == 2) begin
+                        total_point_of_player[1] <= total_point_of_player[1] + 1;
+                        total_point_of_player[0] <= 0;
+                    end
+                end
+        end
+
+        for(i=0;i<5;i++) begin
+                if ( cards_of_dealer[i]<= 10) begin
+                    total_point_of_dealer[1] <= total_point_of_dealer[1] + cards_of_dealer[i];
+                
+
+                end else if (cards_of_dealer[i] >= 11 && cards_of_dealer[i] <= 13) begin
+                    total_point_of_dealer[0] <= total_point_of_dealer[0] + 1;
+
+            //兩個半點相加變1點
+                    if (total_point_of_dealer[1] == 2) begin
+                        total_point_of_dealer[1] <= total_point_of_dealer[1] + 1;
+                        total_point_of_dealer[0] <= 0;
+                    end
+                end
+        end
+    end
+end
 
 //================================================================
 //   LED 控制邏輯
