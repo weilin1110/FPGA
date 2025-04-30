@@ -103,21 +103,43 @@ assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2b'10 ? 1 : 0;
 //   FSM 狀態控制
 //================================================================
 reg [2:0] current_state, next_state;
+reg [2:0]round;
 
+reg [3:0]cards_of_player[0:4];  //1到5張牌
+reg [3:0]total_point_of_player[0:1]; //[0小數點:1整數]
+reg [3:0]cards_of_dealer[0:4];
+reg [3:0]total_point_of_dealer[0:1];
+
+
+integer i;
 // 狀態寄存器（主狀態）
 always @(posedge d_clk or negedge rst_n) begin
     if (!rst_n)
         current_state <= IDLE;
+        round <= 3b'000;
+        for(i = 0; i < 5; i = i + 1) begin
+            cards_of_player[i] = 0;
+            total_point_of_player[i] = 0;
+            cards_of_dealer[i] = 0;
+            total_point_of_dealer[i] = 0;
+        end
     else
         current_state <= next_state;
 end
 
 // 狀態轉移邏輯
 always @(*) begin
-    case (state)
+    case (current_state)
         IDLE: begin
             if (btn_m_pos)
                 next_state = BEGIN;
+                round = round + 1;
+                for(i = 0; i < 5; i = i + 1) begin
+                    cards_of_player[i] = 0;
+                    total_point_of_player[i] = 0;
+                    cards_of_dealer[i] = 0;
+                    total_point_of_dealer[i] = 0;
+                end
             else
                 next_state = IDLE;
         end
@@ -125,28 +147,24 @@ always @(*) begin
             next_state = HIT_PLAYER;
         end
         HIT_PLAYER: begin
-            if (btn_r_pos)
+            if (btn_r_pos or (cards_of_player[4] != 0) or (total_point_of_player[1] >= 11) or (total_point_of_player[1] = 10 && total_point_of_player[0] = 1))
                 next_state = HIT_DEALER;
             else
                 next_state = HIT_PLAYER;
         end
         HIT_DEALER: begin
-            if (btn_r_pos)
+            if (btn_r_pos or (cards_of_dealer[4] != 0) or (total_point_of_dealer[1] >= 11) or (total_point_of_dealer[1] = 10 && total_point_of_dealer[0] = 1))
                 next_state = COMPARE;
             else
                 next_state = HIT_DEALER;
         end
         COMPARE: begin
-            if (btn_r_pos)
+            if (btn_r_pos && round < 4)
+                next_state = IDLE;
+            else if (btn_r_pos)
                 next_state = DONE;
             else
                 next_state = COMPARE;
-        end
-        DONE: begin
-            if (btn_m_pos)
-                next_state = BEGIN;
-            else
-                next_state = DONE;
         end
         default: next_state = IDLE;
     endcase
