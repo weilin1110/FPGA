@@ -46,15 +46,63 @@ reg [2:0] dis_cnt;        // 控制哪一顆七段顯示器亮
 reg pip;                  // 發牌觸發信號
 wire [3:0] number;        // 從 LUT 抽出的一張牌值（1~13）
 
+//=============================
+// ONE SHOT PULSE
+//=============================
+reg btn_m_press_flag;
+reg btn_r_press_flag;
+wire btn_m_pluse;
+wire btn_r_pluse;
+wire btn_m_pos;
+wire btn_r_pos;
+reg [20:0]counter_bounce[0:1];
+
+//btn_m
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        counter_bounce[0] <= 0;
+    else if((counter_bounce[0][20] == 1) && btn_m)
+        counter_bounce[0] <= counter_bounce[0];
+    else if(btn_m)
+        counter_bounce[0] <= counter_bounce[0] + 1;
+    else
+        counter_bounce[0] <= 0;
+end
+assign btn_m_pos = (counter_bounce[0][20] == 1) ? 1 : 0;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        btn_m_press_flag <= 0;
+    else
+        btn_m_press_flag <= btn_m_pos;
+end
+assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2b'10 ? 1 : 0;
+
+//btn_r
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        counter_bounce[1] <= 0;
+    else if((counter_bounce[1][20] == 1) && btn_r)
+        counter_bounce[1] <= counter_bounce[1];
+    else if(btn_r)
+        counter_bounce[1] <= counter_bounce[1] + 1;
+    else
+        counter_bounce[1] <= 0;
+end
+assign btn_r_pos = (counter_bounce[1][20] == 1) ? 1 : 0;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        btn_r_press_flag <= 0;
+    else
+        btn_r_press_flag <= btn_r_pos;
+end
+assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2b'10 ? 1 : 0;
+
 //================================================================
 //   FSM 狀態控制
 //================================================================
 reg [2:0] state, next_state;
-
-// 按鈕去彈跳 + one-shot pulse
-reg btn_m_d1, btn_r_d1;
-wire btn_m_pos = btn_m & ~btn_m_d1;
-wire btn_r_pos = btn_r & ~btn_r_d1;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
