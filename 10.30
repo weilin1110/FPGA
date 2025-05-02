@@ -76,7 +76,7 @@ always @(posedge clk or negedge rst_n) begin
     else
         btn_m_press_flag <= btn_m_pos;
 end
-assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2b'10 ? 1 : 0;
+assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2'b10 ? 1 : 0;
 
 //btn_r
 always @(posedge clk or negedge rst_n) begin
@@ -97,7 +97,7 @@ always @(posedge clk or negedge rst_n) begin
     else
         btn_r_press_flag <= btn_r_pos;
 end
-assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2b'10 ? 1 : 0;
+assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2'b10 ? 1 : 0;
 
 //================================================================
 //   FSM 狀態控制
@@ -144,7 +144,7 @@ always @(posedge d_clk) begin
                     total_point_of_dealer[i] = 0;
                 end
             else
-                next_state = IDLE;
+                next_state <= IDLE;
         end
         BEGIN: begin
             if(cnt == 2) begin
