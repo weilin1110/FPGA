@@ -137,7 +137,7 @@ always @(posedge d_clk) begin
     case (current_state)
         IDLE: begin
             if (btn_m_pluse) begin
-                next_state <= BEGIN;
+                next_state <= BEGINNING;
                 round <= round + 1;
                 k <= 0;
                 cnt <= 0;
@@ -157,7 +157,7 @@ always @(posedge d_clk) begin
                 k <= 0;
             end
             else begin
-                next_state <= BEGIN;
+                next_state <= BEGINNING;
                 cnt <= cnt + 1;
             end
         end
