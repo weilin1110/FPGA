@@ -38,6 +38,9 @@ always@(posedge clk or negedge rst_n) begin
     end
 end
 
+assign d_clk = counter[20];
+assign dis_clk = counter[15];
+
 //================================================================
 //   REG / WIRE 區域
 //================================================================
