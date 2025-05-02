@@ -347,7 +347,7 @@ always@ (posedge d_clk) begin
 end
 
 //number顯示
-reg[3:0] seg7_count
+reg[3:0] seg7_count;
 always@(posedge d_clk or negedge rst_n)begin
 		if(!rst_n)begin
 			seg7_count <= 0;
