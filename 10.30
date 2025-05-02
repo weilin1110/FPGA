@@ -16,7 +16,7 @@ module tenthirty(
 //   PARAMETER - 狀態定義
 //================================================================
 parameter IDLE = 0;
-parameter BEGIN = 1; // 起始牌階段（玩家與莊家各一張）
+parameter BEGINNING = 1; // 起始牌階段（玩家與莊家各一張）
 parameter HIT_PLAYER = 2; // 玩家抽牌階段
 parameter HIT_DEALER = 3; // 莊家抽牌階段
 parameter COMPARE = 4; // 比牌階段
@@ -148,7 +148,7 @@ always @(posedge d_clk) begin
             else
                 next_state <= IDLE;
         end
-        BEGIN: begin
+        BEGINNING: begin
             if(cnt == 2) begin
                 next_state <= HIT_PLAYER;
                 k <= 0;
@@ -188,7 +188,7 @@ end
 //抽牌
 always @(posedge d_clk) begin
     case(current_state)
-        BEGIN: begin
+        BEGINNING: begin
             if(cnt == 0) begin
                 pip <= 1;
             end
@@ -307,7 +307,7 @@ always@ (posedge d_clk) begin
                 seg7_temp[i] = 0;
             end
         end
-        BEGIN: begin
+        BEGINNING: begin
             for(i = 0; i < 7; i = i + 1) begin
                 seg7_temp[i] = 0;
             end
