@@ -102,7 +102,7 @@ assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2'b10 ? 1 : 0;
 //================================================================
 //   FSM 狀態控制
 //================================================================
-reg [2:0] current_state, next_state;
+reg [2:0]current_state, next_state;
 reg [2:0]round;
 
 reg [3:0]cards_of_player[0:4];  //1到5張牌
@@ -341,6 +341,41 @@ always@ (posedge d_clk) begin
 end
 
 //number顯示
+reg[3:0] seg7_count
+always @(posedge d_clk or negedge rst_n)begin
+		if(!rst_n)begin
+			seg7_count <= 0;
+		end
+		else begin
+			seg7_count <= seg7_count + 1;
+		end
+	end
+	
+	always @(posedge d_clk or negedge rst_n)begin
+		if(!rst_n)begin
+			seg7 <= 0;
+		end
+		else begin
+			case(seg7_temp[seg7_count])
+				0:seg7 <= 8'b0000_0001;
+                1:seg7 <= 8'b0000_0110;
+                2:seg7 <= 8'b0101_1011;
+                3:seg7 <= 8'b0100_1111;
+                4:seg7 <= 8'b0110_0110;
+                5:seg7 <= 8'b0110_1101;
+                6:seg7 <= 8'b0111_1101;
+                7:seg7 <= 8'b0000_0111;
+                8:seg7 <= 8'b0111_1111;
+                9:seg7 <= 8'b0110_1111;
+                10:seg7 <= 8'b0011_1111;
+                11:seg7 <= 8'b1000_0000;
+                12:seg7 <= 8'b1000_0000;
+                13:seg7 <= 8'b1000_0000;
+			endcase
+		end
+	end
+
+
 
 
 //================================================================
