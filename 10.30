@@ -159,7 +159,7 @@ always @(posedge d_clk) begin
             end
         end
         HIT_PLAYER: begin
-            if (btn_r_pluse or (cards_of_player[4] != 0) || (total_point_of_player[1] >= 11) || ((total_point_of_player[1] || 10) && (total_point_of_player[0] == 1))) begin
+            if (btn_r_pluse || (cards_of_player[4] != 0) || (total_point_of_player[1] >= 11) || ((total_point_of_player[1] || 10) && (total_point_of_player[0] == 1))) begin
                 next_state <= HIT_DEALER;
                 k <= 0;
             end
