@@ -38,8 +38,8 @@ always@(posedge clk or negedge rst_n) begin
     end
 end
 
-assign d_clk = counter[4]; //23
-assign dis_clk = counter[2]; //16
+assign d_clk = counter[0]; //23
+assign dis_clk = counter[1]; //16
 
 //================================================================
 //   REG / WIRE 區域
@@ -119,6 +119,7 @@ integer i, k, cnt;
 always @(posedge d_clk or negedge rst_n) begin
     if (!rst_n) begin
         current_state <= IDLE;
+        next_state <= IDLE;
         round <= 3'b000;
         k <= 0;
         for(i = 0; i < 5; i = i + 1) begin
@@ -200,13 +201,14 @@ always @(posedge d_clk or negedge rst_n) begin
             if(cnt == 0) begin
                 pip <= 1;
             end
-            else if(cnt == 1) begin
-                cards_of_player[0] <= number;
-            end
             else if(cnt == 2) begin
-                cards_of_dealer[0] <= number;
                 pip <= 0;
-                end;
+            end;
+
+            if(cards_of_player[0] == 0)
+                cards_of_player[0] <= number;
+            else(cards_of_dealer[0] == 0)
+                cards_of_dealer[0] <= number;
         end
         HIT_PLAYER: begin
             if(btn_m_pluse) begin
@@ -232,6 +234,7 @@ always @(posedge d_clk or negedge rst_n) begin
                 k <= k + 1;
             end
         end
+        default: ;
     endcase
     end
 end
@@ -318,8 +321,8 @@ always@ (posedge d_clk or negedge rst_n) begin
         seg7_temp[3] <= 8'b0000_0001;
         seg7_temp[4] <= 8'b0000_0001;
         seg7_temp[5] <= 8'b0000_0001;
-        seg7_temp[6] <= 8'b0011_1111;
-        seg7_temp[7] <= 8'b0011_1111;
+        seg7_temp[6] <= 8'b0000_0001;
+        seg7_temp[7] <= 8'b0000_0001;
     end
     else begin
     case(current_state)
@@ -357,11 +360,11 @@ always@ (posedge d_clk or negedge rst_n) begin
             seg7_temp[3] <= 8'b0000_0001;
             seg7_temp[4] <= 8'b0000_0001;
             seg7_temp[5] <= 8'b0000_0001;
-            seg7_temp[6] <= 8'b0011_1111;
-            seg7_temp[7] <= 8'b0011_1111;
+            seg7_temp[6] <= 8'b0000_0001;
+            seg7_temp[7] <= 8'b0000_0001;
         end
     endcase
-    case(seg7_number[dis_cnt])
+        case(seg7_number[dis_cnt])
 			0:seg7_temp[dis_cnt] <= 8'b0011_1111;
             1:seg7_temp[dis_cnt] <= 8'b0000_0110;
             2:seg7_temp[dis_cnt] <= 8'b0101_1011;
