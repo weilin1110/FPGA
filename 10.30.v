@@ -133,7 +133,7 @@ always @(posedge d_clk or negedge rst_n) begin
 end
 
 // 狀態轉移邏輯
-always @(posedge d_clk) begin
+always @(*) begin
     case (current_state)
         IDLE: begin
             if (btn_m_pluse) begin
@@ -361,36 +361,25 @@ always@ (posedge d_clk or negedge rst_n) begin
             seg7_temp[7] <= 8'b0011_1111;
         end
     endcase
-    case(seg7_number[seg7_count])
-			0:seg7_temp[seg7_count] <= 8'b0011_1111;
-            1:seg7_temp[seg7_count] <= 8'b0000_0110;
-            2:seg7_temp[seg7_count] <= 8'b0101_1011;
-            3:seg7_temp[seg7_count] <= 8'b0100_1111;
-            4:seg7_temp[seg7_count] <= 8'b0110_0110;
-            5:seg7_temp[seg7_count] <= 8'b0110_1101;
-            6:seg7_temp[seg7_count] <= 8'b0111_1101;
-            7:seg7_temp[seg7_count] <= 8'b0000_0111;
-            8:seg7_temp[seg7_count] <= 8'b0111_1111;
-            9:seg7_temp[seg7_count] <= 8'b0110_1111;
-            10:seg7_temp[seg7_count] <= 8'b0011_1111;
-            11:seg7_temp[seg7_count] <= 8'b1000_0000;
-            12:seg7_temp[seg7_count] <= 8'b1000_0000;
-            13:seg7_temp[seg7_count] <= 8'b1000_0000;
-            14:seg7_temp[seg7_count] <= 8'b0000_0001;
-            default:seg7_temp[seg7_count] <= 8'b0000_0001;
+    case(seg7_number[dis_cnt])
+			0:seg7_temp[dis_cnt] <= 8'b0011_1111;
+            1:seg7_temp[dis_cnt] <= 8'b0000_0110;
+            2:seg7_temp[dis_cnt] <= 8'b0101_1011;
+            3:seg7_temp[dis_cnt] <= 8'b0100_1111;
+            4:seg7_temp[dis_cnt] <= 8'b0110_0110;
+            5:seg7_temp[dis_cnt] <= 8'b0110_1101;
+            6:seg7_temp[dis_cnt] <= 8'b0111_1101;
+            7:seg7_temp[dis_cnt] <= 8'b0000_0111;
+            8:seg7_temp[dis_cnt] <= 8'b0111_1111;
+            9:seg7_temp[dis_cnt] <= 8'b0110_1111;
+            10:seg7_temp[dis_cnt] <= 8'b0011_1111;
+            11:seg7_temp[dis_cnt] <= 8'b1000_0000;
+            12:seg7_temp[dis_cnt] <= 8'b1000_0000;
+            13:seg7_temp[dis_cnt] <= 8'b1000_0000;
+            14:seg7_temp[dis_cnt] <= 8'b0000_0001;
+            default:seg7_temp[dis_cnt] <= 8'b0000_0001;
 		endcase
     end
-end
-
-//number顯示
-reg[2:0] seg7_count;
-always@(posedge d_clk or negedge rst_n)begin
-		if(!rst_n)begin
-			seg7_count <= 0;
-		end
-		else begin
-			seg7_count <= seg7_count + 1;
-		end
 end
 
 
