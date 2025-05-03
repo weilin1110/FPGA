@@ -38,8 +38,8 @@ always@(posedge clk or negedge rst_n) begin
     end
 end
 
-assign d_clk = counter[20];
-assign dis_clk = counter[15];
+assign d_clk = counter[4]; //23
+assign dis_clk = counter[2]; //16
 
 //================================================================
 //   REG / WIRE 區域
@@ -61,7 +61,7 @@ wire btn_r_pos;
 reg [20:0]counter_bounce[0:1];
 
 //btn_m
-always @(posedge clk or negedge rst_n) begin
+always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         counter_bounce[0] <= 0;
     else if((counter_bounce[0][20] == 1) && btn_m)
@@ -73,7 +73,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 assign btn_m_pos = (counter_bounce[0][20] == 1) ? 1 : 0;
 
-always @(posedge clk or negedge rst_n) begin
+always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         btn_m_press_flag <= 0;
     else
@@ -82,7 +82,7 @@ end
 assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2'b10 ? 1 : 0;
 
 //btn_r
-always @(posedge clk or negedge rst_n) begin
+always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         counter_bounce[1] <= 0;
     else if((counter_bounce[1][20] == 1) && btn_r)
@@ -94,7 +94,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 assign btn_r_pos = (counter_bounce[1][20] == 1) ? 1 : 0;
 
-always @(posedge clk or negedge rst_n) begin
+always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         btn_r_press_flag <= 0;
     else
@@ -106,7 +106,7 @@ assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2'b10 ? 1 : 0;
 //   FSM 狀態控制
 //================================================================
 reg [2:0]current_state, next_state;
-reg [2:0]round;
+reg [2:0]round; //遊戲次數
 
 reg [3:0]cards_of_player[0:4];  //1到5張牌
 reg [3:0]total_point_of_player[0:1]; //[0小數點:1整數]
@@ -189,7 +189,11 @@ always @(posedge d_clk) begin
 end
 
 //抽牌
-always @(posedge d_clk) begin
+always @(posedge d_clk or negedge rst_n) begin
+    if(!rst_n) begin
+        pip <= 0;
+    end
+    else begin
     case(current_state)
         BEGINNING: begin
             if(cnt == 0) begin
@@ -228,6 +232,7 @@ always @(posedge d_clk) begin
             end
         end
     endcase
+    end
 end
 
 //加起來
@@ -303,18 +308,19 @@ end
 //================================================================
 
 //seg7_temp顯示
-always@ (posedge d_clk) begin
+always@ (posedge d_clk or negedge rst_n) begin
+    if(!rst_n) begin
+        seg7_temp[0] <= 8'b0000_0001;
+        seg7_temp[1] <= 8'b0000_0001;
+        seg7_temp[2] <= 8'b0000_0001;
+        seg7_temp[3] <= 8'b0000_0001;
+        seg7_temp[4] <= 8'b0000_0001;
+        seg7_temp[5] <= 8'b0000_0001;
+        seg7_temp[6] <= 8'b0011_1111;
+        seg7_temp[7] <= 8'b0011_1111;
+    end
+    else begin
     case(current_state)
-        IDLE: begin
-            for(i = 0; i < 7; i = i + 1) begin
-                seg7_temp[i] = 0;
-            end
-        end
-        BEGINNING: begin
-            for(i = 0; i < 7; i = i + 1) begin
-                seg7_temp[i] = 0;
-            end
-        end
         HIT_PLAYER: begin
             for(i = 0; i < 4; i = i + 1) begin
                 seg7_temp[i] = cards_of_player[i];
@@ -341,12 +347,19 @@ always@ (posedge d_clk) begin
             seg7_temp[6] = total_point_of_dealer[1] % 10;
             seg7_temp[7] = total_point_of_dealer[1] / 10;
         end
-        DONE: begin
-            for(i = 0; i < 7; i = i + 1) begin
-                seg7_temp[i] = 0;
-            end
+        default: begin
+                // 其他狀態清空
+                seg7_temp[0] <= 8'b0000_0001;
+                seg7_temp[1] <= 8'b0000_0001;
+                seg7_temp[2] <= 8'b0000_0001;
+                seg7_temp[3] <= 8'b0000_0001;
+                seg7_temp[4] <= 8'b0000_0001;
+                seg7_temp[5] <= 8'b0000_0001;
+                seg7_temp[6] <= 8'b0011_1111;
+                seg7_temp[7] <= 8'b0011_1111;
         end
     endcase
+    end
 end
 
 //number顯示
@@ -380,6 +393,7 @@ always@(posedge d_clk or negedge rst_n)begin
                 11:seg7 <= 8'b1000_0000;
                 12:seg7 <= 8'b1000_0000;
                 13:seg7 <= 8'b1000_0000;
+                default:seg7 <= 8'b0000_0000;
 			endcase
 		end
 	end
