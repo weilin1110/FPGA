@@ -56,23 +56,8 @@ reg btn_m_press_flag;
 reg btn_r_press_flag;
 wire btn_m_pluse;
 wire btn_r_pluse;
-wire btn_m_pos;
-wire btn_r_pos;
-reg [20:0]counter_bounce[0:1];
 
 //btn_m
-always @(posedge d_clk or negedge rst_n) begin
-    if(!rst_n)
-        counter_bounce[0] <= 0;
-    else if((counter_bounce[0][20] == 1) && btn_m)
-        counter_bounce[0] <= counter_bounce[0];
-    else if(btn_m)
-        counter_bounce[0] <= counter_bounce[0] + 1;
-    else
-        counter_bounce[0] <= 0;
-end
-assign btn_m_pos = (counter_bounce[0][20] == 1) ? 1 : 0;
-
 always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         btn_m_press_flag <= 0;
@@ -82,18 +67,6 @@ end
 assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2'b10 ? 1 : 0;
 
 //btn_r
-always @(posedge d_clk or negedge rst_n) begin
-    if(!rst_n)
-        counter_bounce[1] <= 0;
-    else if((counter_bounce[1][20] == 1) && btn_r)
-        counter_bounce[1] <= counter_bounce[1];
-    else if(btn_r)
-        counter_bounce[1] <= counter_bounce[1] + 1;
-    else
-        counter_bounce[1] <= 0;
-end
-assign btn_r_pos = (counter_bounce[1][20] == 1) ? 1 : 0;
-
 always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         btn_r_press_flag <= 0;
@@ -134,7 +107,7 @@ always @(posedge d_clk or negedge rst_n) begin
 end
 
 // 狀態轉移邏輯
-always @(*) begin
+always @(posedge d_clk) begin
     case (current_state)
         IDLE: begin
             if (btn_m_pluse) begin
@@ -205,11 +178,19 @@ always @(posedge d_clk or negedge rst_n) begin
                 pip <= 0;
             end;
 
-            if(cards_of_player[0] == 0) begin
+            if(cards_of_player[0] == 0 && number != 0) begin
                 cards_of_player[0] <= number;
+                if(number < 11)
+                    total_point_of_player[1] = number;
+                else if(number > 10)
+                    total_point_of_player[0] = 1;
             end
-            else if(cards_of_dealer[0] == 0) begin
+            else if(cards_of_dealer[0] == 0 && number != 0) begin
                 cards_of_dealer[0] <= number;
+                if(number < 11)
+                    total_point_of_dealer[1] = number;
+                else if(number > 10)
+                    total_point_of_dealer[0] = 1;
             end
         end
         HIT_PLAYER: begin
@@ -221,6 +202,15 @@ always @(posedge d_clk or negedge rst_n) begin
 
             if(number != 0)begin
                 cards_of_player[k] <= number;
+                if(number < 11)
+                    total_point_of_player[1] = number;
+                else if(number > 10)
+                    total_point_of_player[0] = total_point_of_player[0] + 1;
+
+                if(total_point_of_player[0] == 2)begin
+                    total_point_of_player[1] = total_point_of_player[1] + 1;
+                    total_point_of_player[0] = 0;
+                end
                 k <= k + 1;
             end
         end
@@ -233,44 +223,20 @@ always @(posedge d_clk or negedge rst_n) begin
 
             if(number != 0)begin
                 cards_of_dealer[k] <= number;
+                if(number < 11)
+                    total_point_of_dealer[1] = number;
+                else if(number > 10)
+                    total_point_of_dealer[0] = total_point_of_dealer[0] + 1;
+
+                if(total_point_of_dealer[0] == 2)begin
+                    total_point_of_dealer[1] = total_point_of_dealer[1] + 1;
+                    total_point_of_dealer[0] = 0;
+                end
                 k <= k + 1;
             end
         end
         default: ;
     endcase
-    end
-end
-
-//加起來
-always @(posedge d_clk) begin
-    for(i = 0; i < 5; i = i + 1) begin
-        if (cards_of_player[i] <= 10) begin
-            total_point_of_player[1] <= total_point_of_player[1] + cards_of_player[i];
-        end
-        else if ((cards_of_player[i] >= 11) && (cards_of_player[i] <= 13)) begin
-            total_point_of_player[0] <= total_point_of_player[0] + 1;
-
-            //兩個半點相加變1點
-            if (total_point_of_player[1] == 2) begin
-                total_point_of_player[1] <= total_point_of_player[1] + 1;
-                total_point_of_player[0] <= 0;
-            end
-        end
-    end
-
-    for(i = 0; i < 5; i = i + 1) begin
-        if (cards_of_dealer[i]<= 10) begin
-            total_point_of_dealer[1] <= total_point_of_dealer[1] + cards_of_dealer[i];        
-        end
-        else if ((cards_of_dealer[i] >= 11) && (cards_of_dealer[i] <= 13)) begin
-            total_point_of_dealer[0] <= total_point_of_dealer[0] + 1;
-
-            //兩個半點相加變1點
-            if (total_point_of_dealer[1] == 2) begin
-                total_point_of_dealer[1] <= total_point_of_dealer[1] + 1;
-                total_point_of_dealer[0] <= 0;
-            end
-        end
     end
 end
 
