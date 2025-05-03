@@ -26,8 +26,8 @@ parameter DONE = 5;    // 遊戲結束（4 回合）
 //   d_clk 分頻器設定
 //================================================================
 reg [24:0] counter; 
-wire dis_clk = counter[1]; // 顯示用時脈（較快）
-wire d_clk   = counter[4]; // 控制邏輯用時脈（較慢）
+wire dis_clk; // 顯示用時脈（較快）
+wire d_clk; // 控制邏輯用時脈（較慢）
 
 // 分頻器邏輯
 always@(posedge clk or negedge rst_n) begin
