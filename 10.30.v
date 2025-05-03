@@ -306,11 +306,65 @@ end
 //================================================================
 //Seven-Segment Display
 //================================================================
+reg [7:0]seg7_number[0:7];
 
 //seg7_temp顯示
 always@ (posedge d_clk or negedge rst_n) begin
+    case(current_state)
+        HIT_PLAYER: begin
+            for(i = 0; i < 4; i = i + 1) begin
+                seg7_number[i] <= cards_of_player[i];
+            end
+            seg7_number[5] <= (total_point_of_player[0] == 0)? 0 : 11;
+            seg7_number[6] <= total_point_of_player[1] % 10;
+            seg7_number[7] <= total_point_of_player[1] / 10;
+        end
+        HIT_DEALER: begin
+            for(i = 0; i < 4; i = i + 1) begin
+                seg7_number[i] <= cards_of_dealer[i];
+            end
+            seg7_number[5] <= (total_point_of_dealer[0] == 0)? 0: 11;
+            seg7_number[6] <= total_point_of_dealer[1] % 10;
+            seg7_number[7] <= total_point_of_dealer[1] / 10;
+        end
+        COMPARE: begin
+            seg7_number[0] <= (total_point_of_player[0] == 0)? 0 : 11;
+            seg7_number[1] <= total_point_of_player[1] % 10;
+            seg7_number[2] <= total_point_of_player[1] / 10;
+            seg7_number[3] <= 0;
+            seg7_number[4] <= 0;
+            seg7_number[5] <= (total_point_of_dealer[0] == 0)? 0: 11;
+            seg7_number[6] <= total_point_of_dealer[1] % 10;
+            seg7_number[7] <= total_point_of_dealer[1] / 10;
+        end
+        default: begin
+            // 其他狀態清空
+            seg7_temp[0] <= 8'b0000_0001;
+            seg7_temp[1] <= 8'b0000_0001;
+            seg7_temp[2] <= 8'b0000_0001;
+            seg7_temp[3] <= 8'b0000_0001;
+            seg7_temp[4] <= 8'b0000_0001;
+            seg7_temp[5] <= 8'b0000_0001;
+            seg7_temp[6] <= 8'b0011_1111;
+            seg7_temp[7] <= 8'b0011_1111;
+        end
+    endcase
+end
+
+//number顯示
+reg[2:0] seg7_count;
+always@(posedge d_clk or negedge rst_n)begin
+		if(!rst_n)begin
+			seg7_count <= 0;
+		end
+		else begin
+			seg7_count <= seg7_count + 1;
+		end
+end
+	
+always@(posedge d_clk or negedge rst_n)begin
     if(!rst_n) begin
-        seg7_temp[0] <= 8'b0000_0001;
+	    seg7_temp[0] <= 8'b0000_0001;
         seg7_temp[1] <= 8'b0000_0001;
         seg7_temp[2] <= 8'b0000_0001;
         seg7_temp[3] <= 8'b0000_0001;
@@ -319,86 +373,27 @@ always@ (posedge d_clk or negedge rst_n) begin
         seg7_temp[6] <= 8'b0011_1111;
         seg7_temp[7] <= 8'b0011_1111;
     end
-    else begin
-    case(current_state)
-        HIT_PLAYER: begin
-            for(i = 0; i < 4; i = i + 1) begin
-                seg7_temp[i] = cards_of_player[i];
-            end
-            seg7_temp[5] = (total_point_of_player[0] == 0)? 0 : 11;
-            seg7_temp[6] = total_point_of_player[1] % 10;
-            seg7_temp[7] = total_point_of_player[1] / 10;
-        end
-        HIT_DEALER: begin
-            for(i = 0; i < 4; i = i + 1) begin
-                seg7_temp[i] = cards_of_dealer[i];
-            end
-            seg7_temp[5] = (total_point_of_dealer[0] == 0)? 0: 11;
-            seg7_temp[6] = total_point_of_dealer[1] % 10;
-            seg7_temp[7] = total_point_of_dealer[1] / 10;
-        end
-        COMPARE: begin
-            seg7_temp[0] = (total_point_of_player[0] == 0)? 0 : 11;
-            seg7_temp[1] = total_point_of_player[1] % 10;
-            seg7_temp[2] = total_point_of_player[1] / 10;
-            seg7_temp[3] = 0;
-            seg7_temp[4] = 0;
-            seg7_temp[5] = (total_point_of_dealer[0] == 0)? 0: 11;
-            seg7_temp[6] = total_point_of_dealer[1] % 10;
-            seg7_temp[7] = total_point_of_dealer[1] / 10;
-        end
-        default: begin
-                // 其他狀態清空
-                seg7_temp[0] <= 8'b0000_0001;
-                seg7_temp[1] <= 8'b0000_0001;
-                seg7_temp[2] <= 8'b0000_0001;
-                seg7_temp[3] <= 8'b0000_0001;
-                seg7_temp[4] <= 8'b0000_0001;
-                seg7_temp[5] <= 8'b0000_0001;
-                seg7_temp[6] <= 8'b0011_1111;
-                seg7_temp[7] <= 8'b0011_1111;
-        end
-    endcase
-    end
+	else begin
+		case(seg7_number[seg7_count])
+			0:seg7_temp[seg7_count] <= 8'b0011_1111;
+            1:seg7_temp[seg7_count] <= 8'b0000_0110;
+            2:seg7_temp[seg7_count] <= 8'b0101_1011;
+            3:seg7_temp[seg7_count] <= 8'b0100_1111;
+            4:seg7_temp[seg7_count] <= 8'b0110_0110;
+            5:seg7_temp[seg7_count] <= 8'b0110_1101;
+            6:seg7_temp[seg7_count] <= 8'b0111_1101;
+            7:seg7_temp[seg7_count] <= 8'b0000_0111;
+            8:seg7_temp[seg7_count] <= 8'b0111_1111;
+            9:seg7_temp[seg7_count] <= 8'b0110_1111;
+            10:seg7_temp[seg7_count] <= 8'b0011_1111;
+            11:seg7_temp[seg7_count] <= 8'b1000_0000;
+            12:seg7_temp[seg7_count] <= 8'b1000_0000;
+            13:seg7_temp[seg7_count] <= 8'b1000_0000;
+            14:seg7_temp[seg7_count] <= 8'b0000_0001;
+            default:seg7_temp[seg7_count] <= 8'b0000_0001;
+		endcase
+	end
 end
-
-//number顯示
-reg[3:0] seg7_count;
-always@(posedge d_clk or negedge rst_n)begin
-		if(!rst_n)begin
-			seg7_count <= 0;
-		end
-		else begin
-			seg7_count <= seg7_count + 1;
-		end
-	end
-	
-	always@(posedge d_clk or negedge rst_n)begin
-		if(!rst_n)begin
-			seg7 <= 0;
-		end
-		else begin
-			case(seg7_temp[seg7_count])
-				0:seg7 <= 8'b0000_0001;
-                1:seg7 <= 8'b0000_0110;
-                2:seg7 <= 8'b0101_1011;
-                3:seg7 <= 8'b0100_1111;
-                4:seg7 <= 8'b0110_0110;
-                5:seg7 <= 8'b0110_1101;
-                6:seg7 <= 8'b0111_1101;
-                7:seg7 <= 8'b0000_0111;
-                8:seg7 <= 8'b0111_1111;
-                9:seg7 <= 8'b0110_1111;
-                10:seg7 <= 8'b0011_1111;
-                11:seg7 <= 8'b1000_0000;
-                12:seg7 <= 8'b1000_0000;
-                13:seg7 <= 8'b1000_0000;
-                default:seg7 <= 8'b0000_0000;
-			endcase
-		end
-	end
-
-
 
 
 //================================================================
