@@ -310,6 +310,17 @@ reg [7:0]seg7_number[0:7];
 
 //seg7_temp顯示
 always@ (posedge d_clk or negedge rst_n) begin
+    if(!rst_n) begin
+	    seg7_temp[0] <= 8'b0000_0001;
+        seg7_temp[1] <= 8'b0000_0001;
+        seg7_temp[2] <= 8'b0000_0001;
+        seg7_temp[3] <= 8'b0000_0001;
+        seg7_temp[4] <= 8'b0000_0001;
+        seg7_temp[5] <= 8'b0000_0001;
+        seg7_temp[6] <= 8'b0011_1111;
+        seg7_temp[7] <= 8'b0011_1111;
+    end
+    else begin
     case(current_state)
         HIT_PLAYER: begin
             for(i = 0; i < 4; i = i + 1) begin
@@ -349,32 +360,7 @@ always@ (posedge d_clk or negedge rst_n) begin
             seg7_temp[7] <= 8'b0011_1111;
         end
     endcase
-end
-
-//number顯示
-reg[2:0] seg7_count;
-always@(posedge d_clk or negedge rst_n)begin
-		if(!rst_n)begin
-			seg7_count <= 0;
-		end
-		else begin
-			seg7_count <= seg7_count + 1;
-		end
-end
-	
-always@(posedge d_clk or negedge rst_n)begin
-    if(!rst_n) begin
-	    seg7_temp[0] <= 8'b0000_0001;
-        seg7_temp[1] <= 8'b0000_0001;
-        seg7_temp[2] <= 8'b0000_0001;
-        seg7_temp[3] <= 8'b0000_0001;
-        seg7_temp[4] <= 8'b0000_0001;
-        seg7_temp[5] <= 8'b0000_0001;
-        seg7_temp[6] <= 8'b0011_1111;
-        seg7_temp[7] <= 8'b0011_1111;
-    end
-	else begin
-		case(seg7_number[seg7_count])
+    case(seg7_number[seg7_count])
 			0:seg7_temp[seg7_count] <= 8'b0011_1111;
             1:seg7_temp[seg7_count] <= 8'b0000_0110;
             2:seg7_temp[seg7_count] <= 8'b0101_1011;
@@ -392,7 +378,18 @@ always@(posedge d_clk or negedge rst_n)begin
             14:seg7_temp[seg7_count] <= 8'b0000_0001;
             default:seg7_temp[seg7_count] <= 8'b0000_0001;
 		endcase
-	end
+    end
+end
+
+//number顯示
+reg[2:0] seg7_count;
+always@(posedge d_clk or negedge rst_n)begin
+		if(!rst_n)begin
+			seg7_count <= 0;
+		end
+		else begin
+			seg7_count <= seg7_count + 1;
+		end
 end
 
 
