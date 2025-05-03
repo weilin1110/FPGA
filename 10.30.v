@@ -205,10 +205,12 @@ always @(posedge d_clk or negedge rst_n) begin
                 pip <= 0;
             end;
 
-            if(cards_of_player[0] == 0)
+            if(cards_of_player[0] == 0) begin
                 cards_of_player[0] <= number;
-            else(cards_of_dealer[0] == 0)
+            end
+            else if(cards_of_dealer[0] == 0) begin
                 cards_of_dealer[0] <= number;
+            end
         end
         HIT_PLAYER: begin
             if(btn_m_pluse) begin
