@@ -184,6 +184,7 @@ always @(posedge d_clk) begin
             else
                 next_state <= COMPARE;
         end
+        DONE: next_state = DONE;
         default: next_state <= IDLE;
     endcase
 end
