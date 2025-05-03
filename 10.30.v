@@ -57,22 +57,15 @@ reg btn_r_press_flag;
 wire btn_m_pluse;
 wire btn_r_pluse;
 
-//btn_m
 always @(posedge d_clk or negedge rst_n) begin
     if(!rst_n)
         btn_m_press_flag <= 0;
-    else
-        btn_m_press_flag <= btn_m_pos;
-end
-assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2'b10 ? 1 : 0;
-
-//btn_r
-always @(posedge d_clk or negedge rst_n) begin
-    if(!rst_n)
         btn_r_press_flag <= 0;
     else
-        btn_r_press_flag <= btn_r_pos;
+        btn_m_press_flag <= btn_m;
+        btn_r_press_flag <= btn_r;
 end
+assign btn_m_pluse = {btn_m, btn_m_press_flag} == 2'b10 ? 1 : 0;
 assign btn_r_pluse = {btn_r, btn_r_press_flag} == 2'b10 ? 1 : 0;
 
 //================================================================
