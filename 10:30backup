@@ -119,7 +119,7 @@ always @(*) begin
             if(btn_r_pluse || total_point_of_dealer[1] > 10 || dealer_cards_cnt == 5)
                 next_state <= COMPARE;
             else
-                next_state <= DEALER;
+                next_state <= HIT_DEALER;
         end
 
         COMPARE: begin
@@ -199,7 +199,7 @@ always @(posedge d_clk or negedge rst_n) begin
     else begin
         case(current_state)
             BEGINNING: begin
-                if(player_cards_cnt == 0) begin
+                if(player_cards_cnt == 0 && pip_delay_1_clk) begin
                     cards_of_player[0] <= number;
                     player_cards_cnt <= 1;
                     if(number > 10)
@@ -207,7 +207,7 @@ always @(posedge d_clk or negedge rst_n) begin
                     else
                         total_point_of_player[1] <= number;
                 end
-                else if(dealer_cards_cnt == 0) begin
+                else if(dealer_cards_cnt == 0 && pip_delay_1_clk) begin
                     cards_of_dealer[0] <= number;
                     dealer_cards_cnt <= 1;
                     if(number > 10)
@@ -342,7 +342,7 @@ always @(posedge d_clk or negedge rst_n) begin
     end
     else begin
         case (current_state)
-            PLAYER: begin
+            HIT_PLAYER: begin
                 seg7_temp[0] <= (player_cards_cnt > 0)? seg_display(cards_of_player[0]) : 8'b0000_0001;
                 seg7_temp[1] <= (player_cards_cnt > 1)? seg_display(cards_of_player[1]) : 8'b0000_0001;
                 seg7_temp[2] <= (player_cards_cnt > 2)? seg_display(cards_of_player[2]) : 8'b0000_0001;
@@ -353,7 +353,7 @@ always @(posedge d_clk or negedge rst_n) begin
                 seg7_temp[7] <= seg_display(total_point_of_player[1] / 10);
             end
 
-            DEALER: begin
+            HIT_DEALER: begin
                 seg7_temp[0] <= (dealer_cards_cnt > 0)? seg_display(cards_of_dealer[0]) : 8'b0000_0001;
                 seg7_temp[1] <= (dealer_cards_cnt > 1)? seg_display(cards_of_dealer[1]) : 8'b0000_0001;
                 seg7_temp[2] <= (dealer_cards_cnt > 2)? seg_display(cards_of_dealer[2]) : 8'b0000_0001;
