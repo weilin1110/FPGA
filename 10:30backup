@@ -160,8 +160,6 @@ always @(posedge d_clk or negedge rst_n) begin
             HIT_DEALER:
                 if(btn_m_pluse) pip <= 1;
                 else pip <= 0;
-
-            default: pip <= 0;
         endcase
     end
 end
@@ -169,7 +167,7 @@ end
 reg pip_delay_1_clk;
 always @(posedge d_clk or negedge rst_n) begin
     if (!rst_n)
-        pip_delay_1_clk <= 0;
+        pip_delay_1_clk <= 1'b0;
     else
         pip_delay_1_clk <= pip;
 end
