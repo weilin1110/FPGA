@@ -53,11 +53,11 @@ reg [2:0]round; //��甈⊥
 
 //�摰�
 reg [3:0]cards_of_player[0:4];  //1�5撘萇��
-reg [3:0]total_point_of_player[0:1]; //[0撠暺�:1��]
+reg [4:0]total_point_of_player[0:1]; //[0撠暺�:1��]
 reg [2:0]player_cards_cnt;  //���
 //��振
 reg [3:0]cards_of_dealer[0:4];
-reg [3:0]total_point_of_dealer[0:1];
+reg [4:0]total_point_of_dealer[0:1];
 reg [2:0]dealer_cards_cnt;  
 
 //=============================
@@ -202,17 +202,17 @@ always @(posedge d_clk or negedge rst_n) begin
                     cards_of_player[0] <= number;
                     player_cards_cnt <= 1;
                     if(number > 10)
-                        total_point_of_player[0] <= 1;
+                        total_point_of_player[0] = 1;
                     else
-                        total_point_of_player[1] <= number;
+                        total_point_of_player[1] = number;
                 end
                 else if(dealer_cards_cnt == 0 && pip_delay_1_clk) begin
                     cards_of_dealer[0] <= number;
                     dealer_cards_cnt <= 1;
                     if(number > 10)
-                        total_point_of_dealer[0] <= 1;
+                        total_point_of_dealer[0] = 1;
                     else
-                        total_point_of_dealer[1] <= number;
+                        total_point_of_dealer[1] = number;
                 end
             end
 
@@ -222,16 +222,16 @@ always @(posedge d_clk or negedge rst_n) begin
 
                     if(number > 10) begin
                         if(total_point_of_player[0] == 1) begin
-                            total_point_of_player[0] <= 0;
-                            total_point_of_player[1] <= total_point_of_player[1] + 1;
+                            total_point_of_player[0] = 0;
+                            total_point_of_player[1] = total_point_of_player[1] + 1;
                         end
                         else begin
-                            total_point_of_player[0] <= 1;
-                            total_point_of_player[1] <= total_point_of_player[1];
+                            total_point_of_player[0] = 1;
+                            total_point_of_player[1] = total_point_of_player[1];
                         end
                     end
                     else begin
-                        total_point_of_player[1] <= total_point_of_player[1] + number;
+                        total_point_of_player[1] = total_point_of_player[1] + number;
                     end
 
                     player_cards_cnt <= player_cards_cnt + 1;
@@ -244,16 +244,16 @@ always @(posedge d_clk or negedge rst_n) begin
 
                     if(number > 10) begin
                         if(total_point_of_dealer[0] == 1) begin
-                            total_point_of_dealer[0] <= 0;
-                            total_point_of_dealer[1] <= total_point_of_dealer[1] + 1;
+                            total_point_of_dealer[0] = 0;
+                            total_point_of_dealer[1] = total_point_of_dealer[1] + 1;
                         end
                         else begin
-                            total_point_of_dealer[0] <= 1;
-                            total_point_of_dealer[1] <= total_point_of_dealer[1];
+                            total_point_of_dealer[0] = 1;
+                            total_point_of_dealer[1] = total_point_of_dealer[1];
                         end
                     end
                     else begin
-                        total_point_of_dealer[1] <= total_point_of_dealer[1] + number;
+                        total_point_of_dealer[1] = total_point_of_dealer[1] + number;
                     end
 
                     dealer_cards_cnt <= dealer_cards_cnt + 1;
@@ -287,33 +287,7 @@ always @(posedge d_clk or negedge rst_n) begin
     end
 
 end
-always @(posedge d_clk or negedge rst_n) begin
-    case(current_state)
-        IDLE:begin
-                 seg7_temp[0] <= 8'b0011_1111;
-                 seg7_temp[1] <= 8'b0011_1111;
-                seg7_temp[2] <= 8'b0000_0001;
-                seg7_temp[3] <= 8'b0000_0001;
-                seg7_temp[4] <= 8'b0000_0001;
-                seg7_temp[5] <= 8'b0000_0001;
-                seg7_temp[6] <= 8'b0000_0001;
-                seg7_temp[7] <= 8'b0000_0001;
-         end
-         BEGINNING: begin
-            seg7_temp[0] <= 8'b0011_1111;
-                 seg7_temp[1] <= 8'b0011_1111;
-                seg7_temp[2] <= 8'b0000_0001;
-                seg7_temp[3] <= 8'b0000_0001;
-                seg7_temp[4] <= 8'b0000_0001;
-                seg7_temp[5] <= 8'b0000_0001;
-                seg7_temp[6] <= 8'b0000_0001;
-                seg7_temp[7] <= 8'b0000_0001;
-         end
-         HIT_PLAYER: begin
-            
-         end
-    endcase
-end
+
 
 
 //================================================================
@@ -340,6 +314,8 @@ always @(posedge d_clk or negedge rst_n) begin
                 end
                 else if(total_point_of_player[1] < total_point_of_dealer[1])
                     led <= 3'b010;
+                else
+                    led <= 3'b001;
             end
             DONE: begin
                 led <= 3'b100; // ������＊蝷�
@@ -369,6 +345,26 @@ always @(posedge dis_clk or negedge rst_n) begin
     end
     else begin
         case (current_state)
+            IDLE:begin
+                seg7_temp[0] <= 8'b0000_0001;
+                                     seg7_temp[1] <= 8'b0000_0001;
+                                    seg7_temp[2] <= 8'b0000_0001;
+                                    seg7_temp[3] <= 8'b0000_0001;
+                                    seg7_temp[4] <= 8'b0000_0001;
+                                    seg7_temp[5] <= 8'b0000_0001;
+                                    seg7_temp[6] <= 8'b0011_1111;
+                                    seg7_temp[7] <= 8'b0011_1111;
+                 end
+                 BEGINNING: begin
+                    seg7_temp[0] <= 8'b0000_0001;
+                         seg7_temp[1] <= 8'b0000_0001;
+                        seg7_temp[2] <= 8'b0000_0001;
+                        seg7_temp[3] <= 8'b0000_0001;
+                        seg7_temp[4] <= 8'b0000_0001;
+                        seg7_temp[5] <= 8'b0000_0001;
+                        seg7_temp[6] <= 8'b0011_1111;
+                        seg7_temp[7] <= 8'b0011_1111;
+                 end
             HIT_PLAYER: begin
                 seg7_temp[0] <= (player_cards_cnt > 0)? seg_display(cards_of_player[0]) : 8'b0000_0001;
                 seg7_temp[1] <= (player_cards_cnt > 1)? seg_display(cards_of_player[1]) : 8'b0000_0001;
