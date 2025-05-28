@@ -38,8 +38,11 @@ reg [1:0] out_cnt;                          //輸出計數
 reg signed [31:0] result [3:0];             //運算結果(最多4個)
 reg [1:0] result_cnt;                       //結果數量紀錄
 reg [1:0] mode_reg;                         //鎖存 mode   
-reg signed [31:0] sorted_result [0:3]       //排列的結果
+reg signed [31:0] sorted_result [0:3];      //排列的結果
 reg calc_done, sort_done;                   //計算、排列是否完成
+reg signed [31:0] stack [0:11];             //堆疊暫存
+reg signed [31:0] op1, op2;                 //堆疊計算的temp
+reg [3:0] sp;                               //stack pointer 堆疊指標
 
 //================================================================
 //   Design
@@ -104,16 +107,19 @@ always @(posedge clk or negedge rst_n) begin
         for(i = 0; i < 4; i = i + 1) sorted_result[i] <= 0;
         for(i = 0; i < 12; i = i + 1) op_flag[i] <= 0;
         result_cnt <= 0;
-        calc_done < 0;
+        calc_done <= 0;
+        op1 <= 0;
+        op2 <= 0;
     end
     else if(current_state == CALC) begin
         //結果運算
-        result_cnt <= data_cnt / 3;
-        for(i = 0; i < result_cnt; i = i + 1)begin
-            integer idx;
-            idx = i * 3;
-            case(mode_reg)
-                2'd0, 2'd2: begin   //prefix
+        integer idx;
+        case(mode_reg)
+            // mode == 0 or 1, 資料3個一組進行計算
+            2'd0: begin     //prefix 降冪
+                result_cnt < data_cnt / 3;
+                for(i = 0; i < result_cnt; i = i + 1) begin
+                    idx = i * 3;
                     if(op_flag[idx] == 1 && op_flag[idx+1] == 0 && op_flag[idx+2] == 0)begin
                         case(in_data[idx])
                             3'd0: result[i] <= in_data[idx+1] + in_data[idx+2];
@@ -126,9 +132,13 @@ always @(posedge clk or negedge rst_n) begin
                             default: result[i] <= 0;
                         endcase
                     end
-                    else result[i] <= 0;
+                else result[i] <= 0;
                 end
-                2'd1, 2'd3: begin   //postfix
+            end
+            2'd1: begin     //postfix 升冪
+            result_cnt < data_cnt / 3;
+                for(i = 0; i < result_cnt; i = i + 1) begin
+                    idx = i * 3;
                     if(op_flag[idx] == 0 && op_flag[idx+1] == 0 && op_flag[idx+2] == 1) begin
                         case(in_data[idx+2])
                             3'd0: result[i] <= in_data[idx] + in_data[idx+1];
@@ -141,10 +151,67 @@ always @(posedge clk or negedge rst_n) begin
                             default: result[i] <= 0;
                         endcase
                     end
-                    else result[i] <= 0;
                 end
-            endcase
-        end
+                else result[i] <= 0;
+            end
+            // mode = 2 or 3, 利用stack堆疊來計算
+            2'd2: begin     //prefix (右往左分析)
+                sp = 0;
+                for(i = data_cnt - 1; i >= 0; i = i - 1) begin
+                    if(op_flag[i] == 0) begin
+                        stack[sp] = in_data[i];
+                        sp = sp + 1;
+                    end
+                    else if(op_flag[i] == 1 && sp >= 2)begin
+                        sp = sp - 1;
+                        op1 = stack[sp];
+                        sp = sp - 1;
+                        op2 = stack[sp];
+                        case(in_data[i])
+                            3'd0: stack[sp] = op1 + op2;
+                            3'd1: stack[sp] = op1 - op2;
+                            3'd2: stack[sp] = op1 * op2;
+                            3'd3: begin
+                                integer sum = op1 + op2;
+                                stack[sp] = (sum >= 0) ? sum : -sum;
+                            end
+                            default: stack[sp] = 0;
+                        endcase
+                        sp = sp + 1;
+                    end
+                end
+                result[0] <= stack[0];
+                result_cnt <= 1;
+            end
+            2'd3: begin     //postfix (左往右分析)
+                sp = 0;
+                for(i = 0; i < data_cnt; i = i + 1) begin
+                    if(op_flag[i] == 0) begin
+                        stack[sp] = in_data[i];
+                        sp = sp + 1;
+                    end
+                    else if(op_flag[i] == 1 && sp >= 2)begin
+                        sp = sp - 1;
+                        op2 = stack[sp];
+                        sp = sp - 1;
+                        op1 = stack[sp];
+                        case(in_data[i])
+                            3'd0: stack[sp] = op1 + op2;
+                            3'd1: stack[sp] = op1 - op2;
+                            3'd2: stack[sp] = op1 * op2;
+                            3'd3: begin
+                                integer sum = op1 + op2;
+                                stack[sp] = (sum >= 0) ? sum : -sum;
+                            end
+                            default: stack[sp] = 0;
+                        endcase
+                        sp = sp + 1;
+                    end
+                end
+                result[0] <= stack[0];
+                result_cnt <= 1;
+            end
+        endcase
         calc_done <= 1;
     end
     else calc_done <= 0;
