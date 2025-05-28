@@ -220,31 +220,54 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 // 排序邏輯（Bubble Sort）
-integer j;
+reg sorting;
+reg [1:0] sort_i, sort_j;
 reg [31:0] temp;
-always @(posedge clk or negedge rst_n) begin
-    if(!rst_n) begin
-        for(i = 0; i < 4; i = i + 1) sorted_result[i] <= 0;
-        sort_done <= 0;
-    end
-    else if(current_state == SORT) begin
-        // 將 result[] 複製到 sorted_result[]
-        for(i = 0; i < result_cnt; i = i + 1) sorted_result[i] <= result[i];
 
-        //排序
-        for(i = 0; i < result_cnt - 1; i = i + 1) begin
-            for(j = 0; j < result_cnt - 1 - i; j = j + 1) begin
-                if((mode_reg == 2'd0 && sorted_result[j] < sorted_result[j+1]) ||       //降冪
-                    (mode_reg == 2'd1 && sorted_result[j] > sorted_result[j+1])) begin  //升冪
-                    temp = sorted_result[j];
-                    sorted_result[j] = sorted_result[j+1];
-                    sorted_result[j+1] = temp;
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        sort_i <= 0;
+        sort_j <= 0;
+        sorting <= 0;
+        sort_done <= 0;
+        for (i = 0; i < 4; i = i + 1)
+            sorted_result[i] <= 0;
+    end
+    else if (current_state == SORT) begin
+        if (!sorting) begin
+            // // 將 result[] 複製到 sorted_result[] (複製完的下一個clk才開始計算)
+            for (i = 0; i < result_cnt; i = i + 1)
+                sorted_result[i] <= result[i];
+            sorting <= 1;
+            sort_i <= 0;
+            sort_j <= 0;
+        end
+        else begin
+            if (sort_i < result_cnt - 1) begin
+                if (sort_j < result_cnt - 1 - sort_i) begin
+                    if ((mode_reg == 2'd0 && sorted_result[sort_j] < sorted_result[sort_j+1]) ||        //降冪
+                        (mode_reg == 2'd1 && sorted_result[sort_j] > sorted_result[sort_j+1])) begin    //升冪
+                        temp = sorted_result[sort_j];
+                        sorted_result[sort_j] = sorted_result[sort_j+1];
+                        sorted_result[sort_j+1] = temp;
+                    end
+                    sort_j <= sort_j + 1;
+                end
+                else begin
+                    sort_j <= 0;
+                    sort_i <= sort_i + 1;
                 end
             end
+            else begin
+                sort_done <= 1;
+                sorting <= 0;
+            end
         end
-        sort_done <= 1;
     end
-    else sort_done <= 0;
+    else begin
+        sort_done <= 0;
+        sorting <= 0;
+    end
 end
 
 // 輸出控制
