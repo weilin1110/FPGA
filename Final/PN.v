@@ -138,7 +138,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             2'd1: begin     //postfix 升冪
-            result_cnt < data_cnt / 3;
+            result_cnt <= data_cnt / 3;
                 for(i = 0; i < result_cnt; i = i + 1) begin
                     idx = i * 3;
                     if(op_flag[idx] == 0 && op_flag[idx+1] == 0 && op_flag[idx+2] == 1) begin
@@ -153,8 +153,8 @@ always @(posedge clk or negedge rst_n) begin
                             default: result[i] <= 0;
                         endcase
                     end
+                    else result[i] <= 0;
                 end
-                else result[i] <= 0;
             end
             // mode = 2 or 3, 利用stack堆疊來計算
             2'd2: begin     //prefix (右往左分析)
