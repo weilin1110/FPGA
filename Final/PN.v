@@ -34,7 +34,7 @@ reg [2:0] current_state, next_state;        //狀態存取
 reg [2:0] in_data [0:11];                   //輸入的資料(最多12個)
 reg op_flag [0:11];                         //對應的 operator 判斷
 reg [3:0] data_cnt;                         //資料計數
-reg [2:0] out_cnt;                          //輸出計數
+reg [1:0] out_cnt;                          //輸出計數
 reg signed [31:0] result [3:0];             //運算結果(最多4個)
 reg [1:0] result_cnt;                       //結果數量紀錄
 reg [1:0] mode_reg;                         //鎖存 mode   
@@ -134,7 +134,7 @@ always @(posedge clk or negedge rst_n) begin
                             default: result[i] <= 0;
                         endcase
                     end
-                      else result[i] <= 0;
+                else result[i] <= 0;
                 end
             end
             2'd1: begin     //postfix 升冪
@@ -214,14 +214,13 @@ always @(posedge clk or negedge rst_n) begin
                 result_cnt <= 1;
             end
         endcase
-        end
+        calc_done <= 1;
     end
-    else begin
-        calc_done <= 0;
-    end
+    else calc_done <= 0;
 end
 
-///排序邏輯
+// 排序邏輯（Bubble Sort）
+/// 排序邏輯（簡化版本，一拍完成）
 reg signed [31:0] t[0:3];  // 用於4項排序時
 reg signed [31:0] a[0:3];  // 複製 result
 reg signed [31:0] b0, b1, b2;  // 3項排序時的中間變數
