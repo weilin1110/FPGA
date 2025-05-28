@@ -1,0 +1,465 @@
+module VGA(
+    input rst_n,
+    input clk,    //100MHz
+    input btn_t,
+    input btn_d,
+    input btn_l,
+    input btn_r,
+    output VGA_HS,    //Horizontal synchronize signal
+    output VGA_VS,    //Vertical synchronize signal
+    output [3:0] VGA_R,    //Signal RED
+    output [3:0] VGA_G,    //Signal Green
+    output [3:0] VGA_B     //Signal Blue
+);
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////           Use variables          //////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//Horizontal Parameter
+/////////////////////           YOUR ANS         /////////////////////////
+parameter H_FRONT = 16;
+parameter H_SYNC  = 96;
+parameter H_BACK  = 48;
+parameter H_ACT   = 640;
+/////////////////////           YOUR ANS         /////////////////////////
+parameter H_TOTAL = H_FRONT + H_SYNC + H_BACK + H_ACT;
+
+//Vertical Parameter
+/////////////////////           YOUR ANS         /////////////////////////
+parameter V_FRONT = 10;
+parameter V_SYNC  = 2;
+parameter V_BACK  = 33;
+parameter V_ACT   = 480;
+/////////////////////           YOUR ANS         /////////////////////////
+parameter V_TOTAL = V_FRONT + V_SYNC + V_BACK + V_ACT;
+
+wire d_clk; //2.98Hz clk
+wire clk_25; //25MHz clk
+reg [24:0] count;
+
+reg [9:0] H_cnt;
+reg [9:0] V_cnt;
+reg vga_hs;    //register for horizontal synchronize signal
+reg vga_vs;    //register for vertical synchronize signal
+reg [9:0] X;    //from 1~640
+reg [8:0] Y;    //from 1~480
+
+assign VGA_HS = vga_hs;
+assign VGA_VS = vga_vs;
+
+reg [11:0] VGA_RGB;
+
+assign VGA_R = VGA_RGB[11:8];
+assign VGA_G = VGA_RGB[7:4];
+assign VGA_B = VGA_RGB[3:0];
+
+reg [9:0] snake_x [0:4];
+reg [8:0] snake_y [0:4];
+
+reg [3:0] rand_num0, rand_num1;
+reg [9:0] rand_x;
+reg [8:0] rand_y;
+reg [9:0] match;
+
+reg [3:0] snake_cs, snake_ns;
+reg [1:0] dir_cs, dir_ns;
+
+parameter UP = 0;
+parameter DOWN = 1;
+parameter LEFT = 2;
+parameter RIGHT = 3;
+
+parameter dist = 40;
+parameter range = 20;
+
+parameter IDLE = 0; //initial state
+parameter S1 = 1; //snake run state without eating food
+parameter S11 = 2; //eat food state
+parameter S2 = 3; //snake run state without eating food
+
+//////////////////////////////////////////////////////////////////////////
+////////////////           frequency divider          ////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//100MHz -> ?Hz
+always@(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        count <= 0;
+    else
+        count <= count + 1;
+end
+assign clk_25 = count[1]; //25MHz
+/////////////////////           YOUR ANS         /////////////////////////
+assign d_clk = count[24]; //2.98HZ
+/////////////////////           YOUR ANS         /////////////////////////
+
+//////////////////////////////////////////////////////////////////////////
+///////////////////           Horizontal           ///////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//Horizontal counter
+always@(posedge clk_25 or negedge rst_n) begin //count 0~800
+    H_cnt <= (!rst_n) ? H_TOTAL : ( (H_cnt < H_TOTAL) ? (H_cnt+1'b1) : 10'd0 );
+end
+
+//Horizontal Generator
+always@(posedge clk_25 or negedge rst_n) begin
+    if(!rst_n) begin
+        vga_hs <= 1;
+        X      <= 0;
+    end
+    else begin
+        //Horizontal Sync
+        /////////////////////           YOUR ANS         /////////////////////////
+        if(H_SYNC>H_cnt) //Sync pulse start
+        /////////////////////           YOUR ANS         /////////////////////////
+            vga_hs <= 1'b0; //horizontal synchronize pulse
+        else
+            vga_hs <= 1'b1;
+        //Current X
+        /////////////////////           YOUR ANS         /////////////////////////
+        if(((H_BACK + H_SYNC)<=H_cnt)&&((H_BACK + H_SYNC + H_ACT)>=H_cnt))
+        /////////////////////           YOUR ANS         /////////////////////////
+            X <= X + 1;
+        else
+            X <= 0;
+    end
+end
+
+//////////////////////////////////////////////////////////////////////////
+////////////////////           Vertical           ////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//Vertical counter
+always@(posedge VGA_HS or negedge rst_n) begin //count 0~525
+    V_cnt <= (!rst_n) ? V_TOTAL : ( (V_cnt < V_TOTAL) ? (V_cnt+1'b1) : 10'd0 );
+end
+
+//Vertical Generator
+always@(posedge VGA_HS or negedge rst_n)begin
+    if(!rst_n) begin
+        vga_vs <= 1;
+        Y      <= 0;
+    end
+    else begin
+        //Vertical Sync
+        /////////////////////           YOUR ANS         /////////////////////////
+        if(V_SYNC>V_cnt) //Sync pulse start
+        /////////////////////           YOUR ANS         /////////////////////////
+            vga_vs <= 0;
+        else
+            vga_vs <= 1;
+        //Current Y
+        /////////////////////           YOUR ANS         /////////////////////////
+        if(((V_BACK + V_SYNC)<=V_cnt)&&((V_BACK + V_SYNC + V_ACT)>=V_cnt))
+        /////////////////////           YOUR ANS         /////////////////////////
+            Y <= Y + 1;
+        else
+            Y <= 0;
+    end
+end
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////           snake FSM              //////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//snake current state
+/*always@(posedge d_clk or negedge rst_n) begin
+if(rst_n)
+snake_cs <= IDLE;
+else
+snake_cs <= snake_ns;
+    //////////////////////////////////////////////////////////////////////////
+    /////////////////////           YOUR ANS         /////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+end*/
+
+//snake next state
+always@(posedge d_clk or negedge rst_n) begin
+if(!rst_n)
+snake_cs <= IDLE;
+else begin
+case(snake_cs)
+/////////////////////           YOUR ANS         /////////////////////////
+IDLE : snake_cs <= S1;
+S1 : begin
+if((snake_x[0]==rand_x)&&(snake_y[0]==rand_y))
+snake_cs <= S11;
+end
+S11 : snake_cs <= S2;
+S2 : if((snake_x[0]==rand_x)&&(snake_y[0]==rand_y))
+snake_cs <= 4;
+4 : snake_cs <= 5;
+5 : if((snake_x[0]==rand_x)&&(snake_y[0]==rand_y))
+snake_cs <= 6;
+6 : snake_cs <= 7;
+7 : if((snake_x[0]==rand_x)&&(snake_y[0]==rand_y))
+snake_cs <= 8;
+8 : snake_cs <= 9;
+9 : if((snake_x[0]==rand_x)&&(snake_y[0]==rand_y))
+snake_cs <= 10;
+10: snake_cs <= 9;
+default : snake_cs <= IDLE;
+/////////////////////           YOUR ANS         /////////////////////////
+endcase
+end
+end
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////           direction FSM          //////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//direction current state
+/*always@(posedge clk or negedge rst_n) begin
+    //////////////////////////////////////////////////////////////////////////
+    /////////////////////           YOUR ANS         /////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+end*/
+
+//direction next state
+always@(posedge clk or negedge rst_n) begin
+if(!rst_n)
+dir_cs <= UP;
+else begin
+case(dir_cs)
+UP : begin
+if(btn_l)
+dir_cs = LEFT;
+else if(btn_r)
+dir_cs = RIGHT;
+else
+dir_cs = UP;
+end
+DOWN : begin
+if(btn_l)
+dir_cs = LEFT;
+else if(btn_r)
+dir_cs = RIGHT;
+else
+dir_cs = DOWN;
+end
+LEFT : begin
+if(btn_t)
+dir_cs = UP;
+else if(btn_d)
+dir_cs = DOWN;
+else
+dir_cs = LEFT;
+end
+RIGHT : begin
+if(btn_t)
+dir_cs = UP;
+else if(btn_d)
+dir_cs = DOWN;
+else
+dir_cs = RIGHT;
+end
+default: begin
+dir_cs = UP;
+end
+endcase
+end
+end
+
+//////////////////////////////////////////////////////////////////////////
+/////////////////////           snake move         ///////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//Determine whether a boundary has been encountered
+always @ (posedge d_clk or negedge rst_n) begin
+    if(!rst_n) begin
+        snake_x[0] <= 340;
+        snake_y[0] <= 260;
+        snake_x[1] <= 340;
+        snake_y[1] <= 300;
+    end
+    else begin
+        case(dir_cs)
+        UP : begin
+            if(snake_y[0] == range) begin
+                snake_x[0] <= snake_x[0];
+                snake_y[0] <= V_ACT-range;
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+            else begin
+                snake_x[0] <= snake_x[0];
+                snake_y[0] <= snake_y[0]-dist;
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+        end
+        DOWN : begin
+            if(snake_y[0] == (V_ACT-range)) begin
+                snake_x[0] <= snake_x[0];
+                snake_y[0] <= range;
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+            else begin
+                snake_x[0] <= snake_x[0];
+                snake_y[0] <= snake_y[0]+dist;
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+        end
+        LEFT : begin
+            if(snake_x[0] == range) begin
+                snake_x[0] <= (H_ACT-range);
+                snake_y[0] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+            else begin
+                snake_x[0] <= snake_x[0]-dist;
+                snake_y[0] <= snake_y[0];
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+        end
+        RIGHT : begin
+            if(snake_x[0] == (H_ACT-range)) begin
+                snake_x[0] <= range;
+                snake_y[0] <= snake_y[0];
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+            else begin
+                snake_x[0] <= snake_x[0]+dist;
+                snake_y[0] <= snake_y[0];
+                snake_x[1] <= snake_x[0];
+                snake_y[1] <= snake_y[0];
+snake_x[2] <= snake_x[1];
+                snake_y[2] <= snake_y[1];
+snake_x[3] <= snake_x[2];
+                snake_y[3] <= snake_y[2];
+snake_x[4] <= snake_x[3];
+                snake_y[4] <= snake_y[3];
+            end
+        end
+        endcase
+    end
+end
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////           generate food         ///////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+//random0
+always@(posedge VGA_HS or negedge rst_n) begin
+    if(!rst_n) begin
+        rand_num0 <= 2;
+    end
+    else begin
+        rand_num0[0] <= rand_num0[3];
+rand_num0[1] <= (rand_num0[2]^rand_num1[2]);
+rand_num0[2] <= rand_num0[1];
+rand_num0[3] <= (rand_num0[0]^rand_num1[3]);
+    end
+end
+
+
+//random1
+always@(posedge VGA_HS or negedge rst_n) begin
+    if(!rst_n) begin
+        rand_num1 <= 6;
+    end
+    else begin
+        rand_num1[0] <= (rand_num1[3]^rand_num1[1]);
+rand_num1[1] <= rand_num1[2];
+rand_num1[2] <= (rand_num1[1]^rand_num0[2]);
+rand_num1[3] <= rand_num1[0];
+    end
+end
+
+//random x y
+always@(posedge d_clk or negedge rst_n) begin
+    if(!rst_n) begin
+        rand_x <= (rand_num1>12) ? ( (rand_num1-10)*dist + range ) : ( (rand_num1+2)*dist + range );
+        rand_y <= (rand_num0>8) ? ( (rand_num0-8)*dist + range ) : ( (rand_num0+2)*dist + range );
+    end
+    else begin
+        if(snake_cs==S1 || snake_cs==S2 || snake_cs==5 || snake_cs==7 || snake_cs==9) begin
+            rand_x <= rand_x;
+            rand_y <= rand_y;
+        end
+        else if(snake_cs==S11 || snake_cs==4 || snake_cs==6 || snake_cs==8 || snake_cs==10) begin
+            rand_x <= (rand_num1>12) ? ( (rand_num1-10)*dist + range ) : ( (rand_num1+2)*dist + range );
+rand_y <= (rand_num0>8) ? ( (rand_num0-8)*dist + range ) : ( (rand_num0+2)*dist + range );
+        end
+    end
+end
+
+//////////////////////////////////////////////////////////////////////////
+////////////////////           VGA display         ///////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+always@(*) begin
+
+    /////////////////////           YOUR ANS         /////////////////////////
+    //snake head
+    if((X<(snake_x[0]+range - 1))&&(X>=(snake_x[0]-range + 1))&&(Y<(snake_y[0]+range - 1))&&(Y>=(snake_y[0]-range + 1)))
+        VGA_RGB = 12'hfff; //white
+
+    //snake body
+    else if((X<(snake_x[1]+range - 1))&&(X>=(snake_x[1]-range + 1))&&(Y<(snake_y[1]+range - 1))&&(Y>=(snake_y[1]-range + 1)))
+        VGA_RGB = (snake_cs>=S2) ? 12'hfff : 12'h000; //white : black
+else if((X<(snake_x[2]+range - 1))&&(X>=(snake_x[2]-range + 1))&&(Y<(snake_y[2]+range - 1))&&(Y>=(snake_y[2]-range + 1)))
+        VGA_RGB = (snake_cs>=5) ? 12'hfff : 12'h000; //white : black
+else if((X<(snake_x[3]+range - 1))&&(X>=(snake_x[3]-range + 1))&&(Y<(snake_y[3]+range - 1))&&(Y>=(snake_y[3]-range + 1)))
+        VGA_RGB = (snake_cs>=7) ? 12'hfff : 12'h000; //white : black
+else if((X<(snake_x[4]+range - 1))&&(X>=(snake_x[4]-range + 1))&&(Y<(snake_y[4]+range - 1))&&(Y>=(snake_y[4]-range + 1)))
+        VGA_RGB = (snake_cs>=9) ? 12'hfff : 12'h000; //white : black
+   
+    //food
+    else if((X<(rand_x+10))&&(X>=(rand_x-10))&&(Y<(rand_y+10))&&(Y>=(rand_y-10)))
+        VGA_RGB = 12'hf00; //red
+    /////////////////////           YOUR ANS         /////////////////////////
+
+    //screen
+    else
+        VGA_RGB = 12'h000; //black
+end
+
+endmodule
