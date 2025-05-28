@@ -103,7 +103,6 @@ end
 // 運算邏輯
 integer idx;
 integer sum;
-reg calc_start;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         for(i = 0; i < 4; i = i + 1) result[i] <= 0;
@@ -111,15 +110,12 @@ always @(posedge clk or negedge rst_n) begin
         for(i = 0; i < 12; i = i + 1) op_flag[i] <= 0;
         result_cnt <= 0;
         calc_done <= 0;
-        calc_start <= 0;
         sum <= 0;
         op1 <= 0;
         op2 <= 0;
     end
     else if(current_state == CALC) begin
         //結果運算
-        if(!calc_start) begin
-            calc_start <= 1;
         case(mode_reg)
             // mode == 0 or 1, 資料3個一組進行計算
             2'd0: begin     //prefix 降冪
@@ -138,7 +134,7 @@ always @(posedge clk or negedge rst_n) begin
                             default: result[i] <= 0;
                         endcase
                     end
-                else result[i] <= 0;
+                      else result[i] <= 0;
                 end
             end
             2'd1: begin     //postfix 升冪
@@ -219,13 +215,9 @@ always @(posedge clk or negedge rst_n) begin
             end
         endcase
         end
-        else begin
-        calc_done <= 1;
-        end
     end
     else begin
         calc_done <= 0;
-        calc_start <= 0;
     end
 end
 
