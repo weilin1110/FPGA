@@ -34,7 +34,7 @@ reg [2:0] current_state, next_state;        //狀態存取
 reg [2:0] in_data [0:11];                   //輸入的資料(最多12個)
 reg op_flag [0:11];                         //對應的 operator 判斷
 reg [3:0] data_cnt;                         //資料計數
-reg [1:0] out_cnt;                          //輸出計數
+reg [2:0] out_cnt;                          //輸出計數
 reg signed [31:0] result [3:0];             //運算結果(最多4個)
 reg [1:0] result_cnt;                       //結果數量紀錄
 reg [1:0] mode_reg;                         //鎖存 mode   
@@ -103,6 +103,7 @@ end
 // 運算邏輯
 integer idx;
 integer sum;
+reg calc_start;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         for(i = 0; i < 4; i = i + 1) result[i] <= 0;
@@ -110,12 +111,15 @@ always @(posedge clk or negedge rst_n) begin
         for(i = 0; i < 12; i = i + 1) op_flag[i] <= 0;
         result_cnt <= 0;
         calc_done <= 0;
+        calc_start <= 0;
         sum <= 0;
         op1 <= 0;
         op2 <= 0;
     end
     else if(current_state == CALC) begin
         //結果運算
+        if(!calc_start) begin
+            calc_start <= 1;
         case(mode_reg)
             // mode == 0 or 1, 資料3個一組進行計算
             2'd0: begin     //prefix 降冪
@@ -214,9 +218,15 @@ always @(posedge clk or negedge rst_n) begin
                 result_cnt <= 1;
             end
         endcase
+        end
+        else begin
         calc_done <= 1;
+        end
     end
-    else calc_done <= 0;
+    else begin
+        calc_done <= 0;
+        calc_start <= 0;
+    end
 end
 
 ///排序邏輯
