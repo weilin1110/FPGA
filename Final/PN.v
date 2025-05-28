@@ -25,7 +25,7 @@ module PN(
 //   PARAMETER/INTEGER
 //================================================================
 //--FSM state difine--
-parameter IDLE = 2'd0, RECEIVE = 2'd1, CALC = 2'd2, SORT = 2'd3, OUTPUT = 2'd4;
+parameter IDLE = 3'd0, RECEIVE = 3'd1, CALC = 3'd2, SORT = 3'd3, OUTPUT = 3'd4;
 
 //================================================================
 //   REG/WIRE
@@ -67,7 +67,7 @@ always @(*) begin
             case(mode_reg)
                 2'd0, 2'd1: next_state = (calc_done) ? SORT : CALC;
                 2'd2, 2'd3: next_state = (calc_done) ? OUTPUT : CALC;
-                default:    next_state = IDLE
+                default:    next_state = IDLE;
             endcase
         end
         SORT: next_state = (sort_done) ? OUTPUT : SORT;
@@ -77,30 +77,32 @@ always @(*) begin
 end
 
 // mode 鎖存與資料接收
+integer i;
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         for(i = 0; i < 12; i = i + 1) in_data[i] <= 0;
         data_cnt <= 0;
         mode_reg <= 0;
     end
-    else if (state == IDLE && in_valid) begin
+    else if (current_state == IDLE && in_valid) begin
         mode_reg <= mode;
         in_data[0] <= in;
         op_flag[0] <= operator;
         data_cnt <= 1;
     end
-    else if (state == RECEIVE && in_valid) begin
+    else if (current_state == RECEIVE && in_valid) begin
         in_data[data_cnt] <= in;
         op_flag[data_cnt] <= operator;
         data_cnt <= data_cnt + 1;
     end
-    else if (state == CALC) begin
+    else if (current_state == CALC) begin
         data_cnt <= 0;
     end
 end
 
 // 運算邏輯
-integer i;
+integer idx;
+integer sum;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         for(i = 0; i < 4; i = i + 1) result[i] <= 0;
@@ -108,16 +110,16 @@ always @(posedge clk or negedge rst_n) begin
         for(i = 0; i < 12; i = i + 1) op_flag[i] <= 0;
         result_cnt <= 0;
         calc_done <= 0;
+        sum <= 0;
         op1 <= 0;
         op2 <= 0;
     end
     else if(current_state == CALC) begin
         //結果運算
-        integer idx;
         case(mode_reg)
             // mode == 0 or 1, 資料3個一組進行計算
             2'd0: begin     //prefix 降冪
-                result_cnt < data_cnt / 3;
+                result_cnt <= data_cnt / 3;
                 for(i = 0; i < result_cnt; i = i + 1) begin
                     idx = i * 3;
                     if(op_flag[idx] == 1 && op_flag[idx+1] == 0 && op_flag[idx+2] == 0)begin
@@ -126,7 +128,7 @@ always @(posedge clk or negedge rst_n) begin
                             3'd1: result[i] <= in_data[idx+1] - in_data[idx+2];
                             3'd2: result[i] <= in_data[idx+1] * in_data[idx+2];
                             3'd3: begin
-                                integer sum = in_data[idx+1] + in_data[idx+2];
+                                sum = in_data[idx+1] + in_data[idx+2];
                                 result[i] <= (sum >= 0) ? sum : - sum;
                             end
                             default: result[i] <= 0;
@@ -145,7 +147,7 @@ always @(posedge clk or negedge rst_n) begin
                             3'd1: result[i] <= in_data[idx] - in_data[idx+1];
                             3'd2: result[i] <= in_data[idx] * in_data[idx+1];
                             3'd3: begin
-                                integer sum = in_data[idx] + in_data[idx+1];
+                                sum = in_data[idx] + in_data[idx+1];
                                 result[i] <= (sum >= 0) ? sum : - sum;
                             end
                             default: result[i] <= 0;
@@ -172,7 +174,7 @@ always @(posedge clk or negedge rst_n) begin
                             3'd1: stack[sp] = op1 - op2;
                             3'd2: stack[sp] = op1 * op2;
                             3'd3: begin
-                                integer sum = op1 + op2;
+                                sum = op1 + op2;
                                 stack[sp] = (sum >= 0) ? sum : -sum;
                             end
                             default: stack[sp] = 0;
@@ -200,7 +202,7 @@ always @(posedge clk or negedge rst_n) begin
                             3'd1: stack[sp] = op1 - op2;
                             3'd2: stack[sp] = op1 * op2;
                             3'd3: begin
-                                integer sum = op1 + op2;
+                                sum = op1 + op2;
                                 stack[sp] = (sum >= 0) ? sum : -sum;
                             end
                             default: stack[sp] = 0;
