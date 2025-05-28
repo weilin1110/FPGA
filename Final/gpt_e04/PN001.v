@@ -219,7 +219,8 @@ always @(posedge clk or negedge rst_n) begin
     else calc_done <= 0;
 end
 
-///排序邏輯
+// 排序邏輯（Bubble Sort）
+/// 排序邏輯（簡化版本，一拍完成）
 reg signed [31:0] t[0:3];  // 用於4項排序時
 reg signed [31:0] a[0:3];  // 複製 result
 reg signed [31:0] b0, b1, b2;  // 3項排序時的中間變數
