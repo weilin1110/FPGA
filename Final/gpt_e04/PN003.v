@@ -73,7 +73,9 @@ always @(*) begin
             endcase
         end
         SORT: next_state = (sort_done) ? OUTPUT : SORT;
-        OUTPUT: next_state = (out_cnt >= result_cnt) ? IDLE : OUTPUT;
+        OUTPUT: next_state = ((mode_reg == 2'd2 || mode_reg == 2'd3) && out_cnt == 1) ? IDLE :
+                     ((mode_reg == 2'd0 || mode_reg == 2'd1) && out_cnt == result_cnt) ? IDLE :
+                     OUTPUT;
         default: next_state = IDLE;
     endcase
 end
