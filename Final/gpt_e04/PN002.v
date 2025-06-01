@@ -44,6 +44,7 @@ reg signed [31:0] stack [0:11];             //堆疊暫存
 reg signed [31:0] op1, op2;                 //堆疊計算的temp
 reg [3:0] sp;                               //stack pointer 堆疊指標
 reg calc_start;
+reg sort_start;
 
 //================================================================
 //   Design
@@ -239,8 +240,13 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         for (i = 0; i < 4; i = i + 1) sorted_result[i] <= 0;
         sort_done <= 0;
+        sort_start <= 0;
     end
     else if (current_state == SORT) begin
+        if(!sort_start) begin
+            sort_start <= 1;
+        end
+        else begin
         for (i = 0; i < result_cnt; i = i + 1)
             a[i] = result[i];
 
@@ -295,9 +301,11 @@ always @(posedge clk or negedge rst_n) begin
         end
 
         sort_done <= 1;
+        end
     end
     else begin
         sort_done <= 0;
+        sort_start <= 0;
     end
 end
 
