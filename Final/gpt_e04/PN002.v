@@ -118,6 +118,7 @@ always @(posedge clk or negedge rst_n) begin
     end
     else if(current_state == CALC) begin
         if(!calc_start) begin
+        calc_start <= 1;
         //結果運算
         case(mode_reg)
             // mode == 0 or 1, 資料3個一組進行計算
