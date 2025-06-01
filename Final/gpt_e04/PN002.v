@@ -309,9 +309,31 @@ always @(posedge clk or negedge rst_n) begin
         out_cnt <= 0;
     end
     else if(current_state == OUTPUT) begin
-        out_valid <= 1;
-        out <= (mode_reg == 2 || mode_reg == 3) ? result[0] : sorted_result[out_cnt];
-        out_cnt <= out_cnt + 1;
+        case (mode_reg)
+            2'd0, 2'd1: begin // prefix/postfix with sort
+                if (out_cnt < result_cnt) begin
+                    out <= sorted_result[out_cnt];
+                    out_valid <= 1;
+                    out_cnt <= out_cnt + 1;
+                end else begin
+                    out_valid <= 0;
+                end
+            end
+            2'd2, 2'd3: begin // prefix/postfix with stack
+                if (out_cnt == 0) begin
+                    out <= result[0];
+                    out_valid <= 1;
+                    out_cnt <= 1;
+                end else begin
+                    out_valid <= 0;
+                end
+            end
+            default: begin
+                out <= 0;
+                out_valid <= 0;
+                out_cnt <= 0;
+            end
+        endcase
     end
     else begin
         out <= 0;
