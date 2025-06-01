@@ -74,7 +74,7 @@ always @(*) begin
         end
         SORT: next_state = (sort_done) ? OUTPUT : SORT;
         OUTPUT: next_state = ((mode_reg == 2'd2 || mode_reg == 2'd3) && out_cnt == 1) ? IDLE :
-                     ((mode_reg == 2'd0 || mode_reg == 2'd1) && out_cnt == result_cnt) ? IDLE :
+                     ((mode_reg == 2'd0 || mode_reg == 2'd1) && out_cnt == result_cnt-1) ? IDLE :
                      OUTPUT;
         default: next_state = IDLE;
     endcase
@@ -350,7 +350,8 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         out <= 0;
         out_valid <= 0;
-        out_cnt <= 0;
+        if(current_state == IDLE)
+            out_cnt <= 0;
     end
 end
 
