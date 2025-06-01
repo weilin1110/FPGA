@@ -124,7 +124,7 @@ always @(posedge clk or negedge rst_n) begin
         case(mode_reg)
             // mode == 0 or 1, 資料3個一組進行計算
             2'd0: begin     //prefix 降冪
-                result_cnt <= data_cnt / 3;
+                result_cnt = data_cnt / 3;
                 for(i = 0; i < result_cnt; i = i + 1) begin
                     idx = i * 3;
                     if(op_flag[idx] == 1 && op_flag[idx+1] == 0 && op_flag[idx+2] == 0)begin
@@ -143,7 +143,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             2'd1: begin     //postfix 升冪
-            result_cnt <= data_cnt / 3;
+                result_cnt = data_cnt / 3;
                 for(i = 0; i < result_cnt; i = i + 1) begin
                     idx = i * 3;
                     if(op_flag[idx] == 0 && op_flag[idx+1] == 0 && op_flag[idx+2] == 1) begin
