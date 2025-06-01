@@ -105,6 +105,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 // 運算邏輯
+//reg [1:0] temp_result_cnt;
 integer idx;
 integer sum;
 always @(posedge clk or negedge rst_n) begin
@@ -247,6 +248,7 @@ always @(posedge clk or negedge rst_n) begin
     else if (current_state == SORT) begin
         if(!sort_start) begin
             sort_start <= 1;
+            sort_done <= 0;
         end
         else begin
         for (i = 0; i < result_cnt; i = i + 1)
@@ -328,6 +330,7 @@ always @(posedge clk or negedge rst_n) begin
                 end else begin
                     out_valid <= 0;
                     out <= 0;
+                    out_cnt <= 0;
                 end
             end
             2'd2, 2'd3: begin // prefix/postfix with stack
